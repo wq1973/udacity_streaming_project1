@@ -41,8 +41,8 @@ class Producer:
             # TODO
             # TODO
             # TODO
-            'bootstrap-server' :'localhost:9092',
-            'auto_offset_reset'='latest',
+            'bootstrap-server':'localhost:9092',
+            'auto_offset_reset':'latest',
             'schema.registry.url':'http://localhost:8081'
         }
 
@@ -52,11 +52,13 @@ class Producer:
             Producer.existing_topics.add(self.topic_name)
 
         # TODO: Configure the AvroProducer
-        self.producer = AvroProducer(
-             'bootstrap.servers': 'mybroker,mybroker2',
-             'on_delivery': delivery_report,
-             'schema.registry.url': 'http://schema_registry_host:port'
-        )
+        self.producer = AvroProducer({
+             'bootstrap.servers':'localhost:9092',
+             'client.id': "project1",
+             'linger.ms': 1000,
+             'compression.type':'lz4',
+             'batch.num.messages': 100})
+
 
     def create_topic(self):
         """Creates the producer topic if it does not already exist"""
@@ -65,11 +67,16 @@ class Producer:
         # TODO: Write code that creates the topic for this producer if it does not already exist on
         # the Kafka Broker.
         #
-        if self.topic_name not in Producer.existing_topics:
-            self.create_topic()
-            Producer.existing_topics.add(self.topic_name)
         #
-        logger.info("topic creation kafka integration incomplete - skipping")
+        self=AdminClient({"bootstrap.servers": BROKER_URL})
+        futures = self.create_topics(
+        [NewTopic(topic=TOPIC_NAME, num_partitions=5, replication_factor=1)]
+    )
+        for _, future in futures.items():
+            try:
+                future.result()
+            except Exception as e:
+                logger.info("topic creation kafka integration incomplete - skipping")
 
     def time_millis(self):
         return int(round(time.time() * 1000))
@@ -81,6 +88,7 @@ class Producer:
         # TODO: Write cleanup code for the Producer here
         #
         #
+        producer.flush()
         logger.info("producer close incomplete - skipping")
 
     def time_millis(self):
