@@ -41,9 +41,9 @@ class Producer:
             # TODO
             # TODO
             # TODO
-            'bootstrap-server':'localhost:9092',
-            'auto_offset_reset':'latest',
-            'schema.registry.url':'http://localhost:8081'
+            "bootstrap-server":"PLAINTEXT://localhost:9092",
+            "auto_offset_reset":"latest",
+            "schema.registry.url":"http://localhost:8081"
         }
 
         # If the topic does not already exist, try to create it
@@ -53,11 +53,12 @@ class Producer:
 
         # TODO: Configure the AvroProducer
         self.producer = AvroProducer({
-             'bootstrap.servers':'localhost:9092',
-             'client.id': "project1",
-             'linger.ms': 1000,
-             'compression.type':'lz4',
-             'batch.num.messages': 100})
+             "bootstrap.servers":"PLAINTEXT://localhost:9092",
+             "schema.registry.url": "http://localhost:8081",
+             "client.id": "project1",
+             "linger.ms": 1000,
+             "compression.type":"lz4",
+             "batch.num.messages": 100})
 
 
     def create_topic(self):
@@ -68,10 +69,22 @@ class Producer:
         # the Kafka Broker.
         #
         #
-        self=AdminClient({"bootstrap.servers": BROKER_URL})
+        
         futures = self.create_topics(
-        [NewTopic(topic=TOPIC_NAME, num_partitions=5, replication_factor=1)]
-    )
+        [
+            NewTopic(
+                topic=topic_name, 
+                num_partitions=5, 
+                replication_factor=1,
+                config={
+                    "cleanup.policy": "delete",
+                    "compression.type": "lz4",
+                    "delete.retention.ms": "2000",
+                    "file.delete.delay.ms": "2000",
+                }
+                    
+                )]
+        )
         for _, future in futures.items():
             try:
                 future.result()
