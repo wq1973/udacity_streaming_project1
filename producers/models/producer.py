@@ -7,6 +7,7 @@ from confluent_kafka import avro
 from confluent_kafka.admin import AdminClient, NewTopic
 from confluent_kafka.avro import AvroProducer
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +43,7 @@ class Producer:
             # TODO
             # TODO
             "bootstrap-server":"PLAINTEXT://localhost:9092",
-            "auto_offset_reset":"latest",
+            "broker_id":0,
             "schema.registry.url":"http://localhost:8081"
         }
 
@@ -52,13 +53,12 @@ class Producer:
             Producer.existing_topics.add(self.topic_name)
 
         # TODO: Configure the AvroProducer
+        # https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.avro.AvroProducer
         self.producer = AvroProducer({
              "bootstrap.servers":"PLAINTEXT://localhost:9092",
              "schema.registry.url": "http://localhost:8081",
-             "client.id": "project1",
-             "linger.ms": 1000,
              "compression.type":"lz4",
-             "batch.num.messages": 100})
+             "batch.num.messages": 10000})
 
 
     def create_topic(self):
@@ -69,25 +69,26 @@ class Producer:
         # the Kafka Broker.
         #
         #
-        
-        futures = self.create_topics(
-        [
-            NewTopic(
-                topic=topic_name, 
-                num_partitions=5, 
-                replication_factor=1,
-                config={
-                    "cleanup.policy": "delete",
-                    "compression.type": "lz4",
-                    "delete.retention.ms": "2000",
-                    "file.delete.delay.ms": "2000",
-                }
-                    
-                )]
+        futures = client.create_topics(
+            [
+                NewTopic(
+                    topic=topic_name,
+                    num_partitions=3,
+                    replication_factor=2,
+                    config={
+                        "cleanup.policy": "delete",
+                        "compression.type": "lz4",
+                        "delete.retention.ms": "2000",
+                        "file.delete.delay.ms": "2000",
+                    },
+                )
+            ]
         )
-        for _, future in futures.items():
+
+        for topic, future in futures.items():
             try:
                 future.result()
+                print("topic created")
             except Exception as e:
                 logger.info("topic creation kafka integration incomplete - skipping")
 
