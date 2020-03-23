@@ -56,9 +56,9 @@ class Producer:
         # https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.avro.AvroProducer
         self.producer = AvroProducer({
              "bootstrap.servers":"PLAINTEXT://localhost:9092",
-             "schema.registry.url": "http://localhost:8081",
-             "compression.type":"lz4",
-             "batch.num.messages": 10000})
+             "schema.registry.url": "http://localhost:8081"}
+             default_key_schema=key_schema,
+             default_value_schema=value_schema)
 
 
     def create_topic(self):
@@ -69,18 +69,25 @@ class Producer:
         # the Kafka Broker.
         #
         #
+        client = AdminClient(
+            {"bootstrap.servers": self.broker_properties["bootstrap.servers"]}
+        )
+
+        topic_exsists = self.check_topic_exists(client, self.topic_name)
+
+        if(topic_exsists):
+            logger.info(f'Topic {self.topic_name} exsists. Will not create')
+            return
+
+        logger.info(f"Creating topic: {self.topic_name}")
+
         futures = client.create_topics(
             [
                 NewTopic(
                     topic=topic_name,
                     num_partitions=3,
-                    replication_factor=2,
-                    config={
-                        "cleanup.policy": "delete",
-                        "compression.type": "lz4",
-                        "delete.retention.ms": "2000",
-                        "file.delete.delay.ms": "2000",
-                    },
+                    replication_factor=2
+                  
                 )
             ]
         )
