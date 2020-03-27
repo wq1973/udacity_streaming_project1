@@ -2,3 +2,5 @@
 .project
 *.pyc
 .zip
+venv
+.vscode
